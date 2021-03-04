@@ -1,0 +1,49 @@
+---
+title: "hierarchical-clustering"
+author: "Carmen Galaz-García"
+date: "3/3/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(here)
+library(janitor)
+library(ggdendro)
+
+```
+
+
+```{r}
+chemistry_raw <- read_csv(here('hierarchical_clustering','sbc_coastal_drainage.csv'))
+
+site_chemistry <- replace(chemistry_raw, chemistry_raw<0, NA) %>% # replace -999 with NA
+  group_by(site_code) %>% 
+  summarise_at(vars(nh4_uM:spec_cond_uSpercm),mean,na.rm=TRUE) %>% 
+  drop_na()
+```
+
+
+```{r}
+scale_chemistry <- site_chemistry %>% 
+  select(!site_code) %>% 
+  scale() 
+
+rownames(scale_chemistry) <- site_chemistry$site_code
+
+euc_distance <- dist(scale_chemistry, method = "euclidean")
+
+hc_complete <- hclust(euc_distance, method = "complete" )
+
+ggdendrogram(hc_complete, 
+             rotate = TRUE) +
+  theme_minimal() +
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank())+
+  labs(x = "Site Code",
+       y = "Scaled Distance")
+
+```
+
