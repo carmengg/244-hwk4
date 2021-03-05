@@ -37,6 +37,7 @@ euc_distance <- dist(scale_chemistry, method = "euclidean")
 
 hc_complete <- hclust(euc_distance, method = "complete" )
 
+
 ggdendrogram(hc_complete, 
              rotate = TRUE) +
   theme_minimal() +
