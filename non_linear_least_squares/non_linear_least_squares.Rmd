@@ -1,5 +1,6 @@
 ---
-title: "non-linear-least-squares"
+title: "Non-linear least-squares Parameter Estimation – Wild Fish Catch"
+subtitle: "ESM 244 - Advanced Data Analysis : Homework 4, task 2"
 author: "Carmen Galaz-García"
 date: "3/5/2021"
 output: html_document
@@ -33,7 +34,7 @@ fish <- fish %>%
 
 ``` 
 
-### Data exploration
+## Data exploration
 
 ```{r}
 # Data exploration
@@ -47,16 +48,16 @@ ggplot(data = fish, aes(x = year, y = wild_catch)) +
 
 
 ```{r}
-# Find Estimates exp_fish <- fish %>% 
+# Find Estimates 
+exp_fish <- fish %>% 
   filter(year < 20) %>% 
   mutate(ln_catch = log(wild_catch))
   
-# Model linear to get *k* estimate (the slope of this linear equation is an estimate of the growth rate constant):
-lm_k <- lm(ln_catch ~ year, data = exp_fish)
-lm_k
+linear <- lm(ln_catch ~ year, data = exp_fish)
 ```
 
-The data seems to follow a logistic growth (though for the first 20 years it seems to be quite linear). This is if $t$ is the years since 1950 then the world wild fish catch (in millions of tons is) $P$ as a function of $t$ could be modeled by
+The data seems to follow a logistic growth (though for the first 20 years it seems to be quite linear). 
+Then if $t$ is the years since 1950, the world wild fish catch (in millions of tons ) $P$ as a function of $t$ could be modeled by
 $P(t) = \frac{K}{1+Ae^{-kt}}$ where
 
 - $K$ is the carrying capacity, in this case the total of fish tons available for fishing in the wild,
@@ -66,33 +67,26 @@ $P(t) = \frac{K}{1+Ae^{-kt}}$ where
 We estimate these parameters to be 
 $K\sim 92$ and
 $P_0 \sim 17$, which gives $A \sim 4.41$, and
-$k \sim 0.058$, 
-
-
+$k \sim 0.058$.
 
 
 ## Nonlinear least squares
 ```{r}
-
 
 nls_catch <- nls(wild_catch ~ K/(1 + A*exp(-r*year)),
               data = fish,
               start = list(K = 92, A = 4.41, r = 0.058),
               trace = FALSE
               )
-summary(nls_catch)
-```
-```{r}
+#summary(nls_catch)
+
 model_out <- broom::tidy(nls_catch) 
-K_est <- model_out$estimate[1] 
-A_est <- model_out$estimate[2] 
-k_est <- model_out$estimate[3] 
 ```
 
 Based on a non-linear least-squares model, the optimized parameters are
-`r K =K_est` millions of tons of wild fish caught,
-`r A =A_est`  and
-`r k =k_est` millions of tons of wild fish caught per year. 
+$K=$ `r round(model_out$estimate[1],2)` millions of tons of wild fish caught,
+$A=$ `r round(model_out$estimate[2],2)`  and
+$k=$ `r round(model_out$estimate[3],2)` millions of tons of wild fish caught per year. 
 
 
 ### Model visualization
@@ -102,18 +96,19 @@ Based on a non-linear least-squares model, the optimized parameters are
 catch_predict <- predict(nls_catch)
 
 # Bind predictions to original data frame:
-catch_complete <- data.frame(fish, catch_predict)
+catch_complete <- data.frame(fish, catch_predict) %>% 
+  mutate(year=year+1950)
 
 # Plot them all together:
 ggplot(data = catch_complete, aes(x = year, y = wild_catch)) +
   geom_point(col='blue4', alpha=0.5) +
   geom_line(aes(x = year, y = catch_predict)) +
   theme_minimal()+
-  labs( title= "",
-    x = "years since 1950 ", 
+  labs( title= "Global Wild Fish Catch 1960-2012",
+    x = "year", 
        y = "world wild fish catch (million tons)")
 ```
 
-$## Data source
+## Data source
 
 Global wild fish catch and aquaculture production, compiled by Earth Policy Institute with 1950-2010 from U.N. Food and Agriculture Organization (FAO), ​Global Capture Production​ and Global Aquaculture Production​, electronic databases, at www.fao.org/fishery/topic/16140/en.
